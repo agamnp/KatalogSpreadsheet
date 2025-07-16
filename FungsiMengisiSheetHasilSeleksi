@@ -1,0 +1,53 @@
+//========     Fungsi Mengisi Sheet Hasil Seleksi     ========
+  function IsiSheetHasilSeleksi() {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetUtama = ss.getActiveSheet();
+    const namaSheetAktif = sheetUtama.getName();
+    // Cek apakah sheet aktif adalah "Hasil Seleksi"
+    if (namaSheetAktif !== 'Hasil Seleksi') {
+      Logger.log('Fungsi ini hanya dapat dijalankan di sheet "Hasil Seleksi".');
+      SpreadsheetApp.getUi().alert('Fungsi ini hanya dapat dijalankan di sheet "Hasil Seleksi".');
+      return;
+    }
+    const semuaSheet = ss.getSheets();
+    const namaSheets = semuaSheet.map(sheet => sheet.getName());
+    const colPenerbit = 2; // Kolom B
+    const colJumlahJudul = 3; // Kolom C
+    const colTotalHarga = 5; // Kolom E
+    const coljumjudlsel = 9; // kolom I
+    const coltotcopsel = 10; // Kolom J
+    const coltotharsel = 11; // Kolom K
+
+    // Baris target: 20–28 dan 36–119
+    const bnykpen=9;//Array(9) adalah jumlah baris dari data yang akan diisi
+    const bpa=20;// map(i => i + 20) adalah baris awal nya adalah baris 20
+    const bnykpen2=85;//Array(85) adalah jumlah baris dari data yang akan diisi
+    const bpa2=35;// map(i => i + 35) adalah baris awal nya adalah baris 20
+    
+    const barisTarget = [...Array(bnykpen).keys()]
+      .map(i => i + bpa) //jumlah baris bnykpen dan di mulai dari baris bpa
+      .concat([...Array(bnykpen2).keys()].map(i => i + bpa2));//jumlah baris bnykpen2 dan di mulai dari baris bpa2
+    barisTarget.forEach(row => {
+      const penerbit = sheetUtama.getRange(row, colPenerbit).getValue();
+      if (!penerbit) return;
+      // Cari sheet yang cocok berdasarkan nama penerbit
+      const sheetCocok = namaSheets.find(namaSheet =>
+        namaSheet.toLowerCase().includes(penerbit.toString().toLowerCase())
+      );
+      if (sheetCocok) {
+        Logger.log(`Memproses penerbit: ${penerbit} → sheet: ${sheetCocok}`);
+        sheetUtama.getRange(row, colJumlahJudul).setFormula(`='${sheetCocok}'!G2`); // Isi kolom C (Jumlah Judul) dengan G2 dari sheet penerbit
+        sheetUtama.getRange(row, colTotalHarga).setFormula(`='${sheetCocok}'!G3`);// Isi kolom E (Total Harga) dengan G3 dari sheet penerbit
+        sheetUtama.getRange(row, coljumjudlsel).setFormula(`='${sheetCocok}'!J2`);//Isi kolom I (Jumlah Judul Seleksi) dengan J2 dari sheet penerbit
+        sheetUtama.getRange(row, coltotcopsel).setFormula(`='${sheetCocok}'!J3`);//Isi kolom J (total Copy Seleksi) dengan J3 dari sheet penerbit
+        sheetUtama.getRange(row, coltotharsel).setFormula(`='${sheetCocok}'!J4`);//Isi kolom J (total Harga Seleksi) dengan J4 dari sheet penerbit    
+      } else {
+        sheetUtama.getRange(row, colJumlahJudul).setValue('Sheet tidak ditemukan');
+        sheetUtama.getRange(row, colTotalHarga).setValue('Sheet tidak ditemukan');
+        sheetUtama.getRange(row, coljumjudlsel).setValue('Sheet tidak ditemukan');
+        sheetUtama.getRange(row, coltotcopsel).setValue('Sheet tidak ditemukan');
+        sheetUtama.getRange(row, coltotharsel).setValue('Sheet tidak ditemukan');
+      }
+    });
+  }
+//========     Fungsi Mengisi Sheet Hasil Seleksi     ========
