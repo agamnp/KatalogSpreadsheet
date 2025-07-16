@@ -1,0 +1,53 @@
+//========     Fungsi Hapus pembelian Sebelumnya berdasarkan UUID     ========
+  function HapusSudahdibeliUUID() {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetData = ss.getActiveSheet();
+    const sheetUUID = ss.getSheetByName("DaftarUUID");
+    const nama = sheetData.getSheetName();
+    Logger.log('🔍 Memproses sheet: ' + nama);
+    if (!sheetData || !sheetUUID) {
+      throw new Error("Sheet aktif atau 'DaftarUUID' tidak ditemukan.");
+    }
+    const startRow = 9;
+    const lastRow = sheetData.getLastRow();
+    const numRows = lastRow - startRow + 1;
+    if (numRows <= 1) return;
+    const data = sheetData.getRange(startRow, 1, numRows, sheetData.getLastColumn()).getValues();
+    const headers = data[0].map(h => String(h).toLowerCase().trim());
+    const uuidIndex = headers.findIndex(h => h === "uuid");
+    if (uuidIndex === -1) {
+      throw new Error("Kolom 'UUID' tidak ditemukan di baris ke-9.");
+    }
+    const uuidRef = sheetUUID.getRange("A:A").getValues().flat().filter(val => val);
+    const uuidSet = new Set(uuidRef.map(val => String(val).trim()));
+    for (let i = data.length - 1; i >= 1; i--) {
+      const uuid = String(data[i][uuidIndex]).trim();
+      if (uuidSet.has(uuid)) { sheetData.deleteRow(startRow + i); }
+    }
+    Logger.log('🔍 Selesai Memproses sheet: ' + nama);
+    TampilanSheetPenerbit();
+  }
+//========     Fungsi Hapus pembelian Sebelumnya berdasarkan UUID     ========
+
+//========     Fungsi Hapus pembelian Sebelumnya berdasarkan UUID semua Sheet     ========
+  function HapusSudahdibeliUUIDALLSHEET() {
+     const spreadsheet = SpreadsheetApp.getActive();
+    const semuaSheet = spreadsheet.getSheets();
+    //PERLU DIRUBAH
+    const sheetmulai = 1; // Masukan Nomor Sheet awal
+    //PERLU DIRUBAH
+    const mulai = sheetmulai + 2;
+    const sheetDikecualikan = ["Form Pengadaan", "Hasil Seleksi", "Referensi", "DaftarISBN", "DaftarUUID"];
+
+    if (mulai < 0 || mulai >= semuaSheet.length) {
+      Logger.log("Nomor sheet tidak valid.");
+      return;
+    }
+    semuaSheet.slice(mulai).forEach(sheet => {
+    const namaSheet = sheet.getName();
+    if (sheetDikecualikan.includes(namaSheet)) return;
+      spreadsheet.setActiveSheet(sheet);
+    HapusSudahdibeliUUID();
+    });
+  }
+//========     Fungsi Hapus pembelian Sebelumnya berdasarkan UUID semua Sheet     ========
