@@ -1,0 +1,32 @@
+//========     Fungsi Hapus Sheet PPN atau Non PPN     ========
+  function HapusSheetPPNatauNonPPN() {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheetSeleksi = ss.getSheetByName("Hasil Seleksi");
+    var data = sheetSeleksi.getDataRange().getValues();
+    var penerbitPPNMap = {}; // key: nama penerbit, value: jenis PPN
+    // Ambil nama-nama penerbit yang PPN saja
+    for (var i = 17; i < data.length; i++) {
+      var namaPenerbit = data[i][1]; // Kolom B
+      var jenisPPN = data[i][3];     // Kolom D
+
+      // ganti apakah Penerbit ppn atau Non ppn yang akan di hapus
+
+      //PERLU DIRUBAH
+      if (namaPenerbit && jenisPPN && jenisPPN.toLowerCase().trim() === "ppn") //jenis yang akan di hapus ppn || non ppn
+      //PERLU DIRUBAH
+      {
+        penerbitPPNMap[namaPenerbit.trim()] = jenisPPN.trim();
+      }
+    }
+    // Loop semua sheet dan hapus kalau cocok
+    var allSheets = ss.getSheets();
+    allSheets.forEach(function (sheet) {
+      var rawName = sheet.getName();
+      var cleanName = rawName.replace(/^\d+\.\s*/, "").trim();
+      if (penerbitPPNMap.hasOwnProperty(cleanName)) {
+        Logger.log("Menghapus sheet: " + cleanName + " | Jenis: " + penerbitPPNMap[cleanName]);
+        ss.deleteSheet(sheet);
+      }
+    });
+  }
+//========     Fungsi Hapus Sheet PPN atau Non PPN     ========
