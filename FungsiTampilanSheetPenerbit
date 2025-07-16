@@ -1,0 +1,114 @@
+//========     Fungsi Mengatur Tampilan PerSheet Penerbit    ========
+function TampilanSheetPenerbit() {
+const sheet = SpreadsheetApp.getActiveSheet();
+const nama = sheet.getSheetName();
+const sheetExcluded = ['Form Pengadaan", "Hasil Seleksi", "Referensi", "DaftarISBN", "DaftarUUID'];
+
+//Lewati sheet pengecualian
+if (sheetExcluded.includes(nama)) {
+Logger.log('Melewati TampilanSheetPenerbit() karena termasuk sheet pengecualian: ' + nama);
+return;}
+Logger.log('Menjalankan TampilanSheetPenerbit() pada: ' + nama);
+const maxRows = sheet.getLastRow();
+// --- Lepas Freeze dan Filter jika ada ---
+ sheet.setFrozenRows(0);
+    sheet.setFrozenColumns(0);
+    if (sheet.getFilter()) {
+      sheet.getFilter().remove();
+    }
+    // --- Atur ukuran kolom ---
+    const ukuranKolom = [
+      44, 119, 369, 129, 127, 134, 124, 125, 109, 109,
+      100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
+      100, 100, 100, 100, 150, 80, 115, 266
+    ];
+    ukuranKolom.forEach((width, i) => sheet.setColumnWidth(i + 1, width));
+    // --- Freeze Sheet ---
+    sheet.setFrozenColumns(10);
+    sheet.setFrozenRows(9);
+    // --- Rumus tabel atas ---
+    sheet.getRange('G2').setFormula(`=COUNTA(C10:C${maxRows})`);
+    sheet.getRange('G3').setFormula(`=SUM(Y10:Y${maxRows})`);
+    sheet.getRange('G4').setFormula(`=AVERAGE(Y10:Y${maxRows})`);
+    sheet.getRange('J2').setFormula(`=COUNTA(Z10:Z${maxRows})`);
+    sheet.getRange('J3').setFormula(`=SUM(Z10:Z${maxRows})`);
+    sheet.getRange('J4').setFormula(`=SUM(AA10:AA${maxRows})`);
+    sheet.getRange('J5').setFormula(`=AVERAGEIF(Z10:Z${maxRows}, ">0", AA10:AA${maxRows})`);
+    const startRow = 10;
+    //Modul autofill     
+    function modulclearAndAutoFillColumn(sheet, colLetter, startRow, formulaOrValue) {
+      const col = sheet.getRange(colLetter + '1').getColumn();
+      const lastRow = sheet.getLastRow();
+      const range = sheet.getRange(startRow, col, lastRow - startRow + 1);
+      // Hapus isi sel
+      range.clear({ contentsOnly: true, skipFilteredRows: true });
+      // Tulis formula atau value di sel awal
+      const firstCell = sheet.getRange(startRow, col);
+      if (formulaOrValue.startsWith('=')) {
+        firstCell.setFormula(formulaOrValue);
+      } else {
+        firstCell.setValue(formulaOrValue);
+      }
+      // Autofill ke bawah kalau barisnya lebih dari 1
+      if (lastRow > startRow) {
+        const fillRange = sheet.getRange(startRow, col, lastRow - startRow + 1);
+        firstCell.autoFill(fillRange, SpreadsheetApp.AutoFillSeries.ALTERNATE_SERIES);
+      };
+    }
+    // --- Auto-fill beberapa kolom ---
+    modulclearAndAutoFillColumn(sheet, 'A', startRow, '1');
+    modulclearAndAutoFillColumn(sheet, 'B', startRow, '=HYPERLINK("https://mocostore.moco.co.id/catalog/"&AB10;"Klik Disini")');
+    modulclearAndAutoFillColumn(sheet, 'AA', startRow, '=Y10*Z10');
+    // --- Format tabel ---
+    const borderStyle = SpreadsheetApp.BorderStyle.SOLID;
+    sheet.getRange('F1:J5').setBorder(false, false, false, false, false, false);
+    sheet.getRange('F1:G4').setBorder(true, true, true, true, true, true, '#000000', borderStyle);
+    sheet.getRange('I1:J5').setBorder(true, true, true, true, true, true, '#000000', borderStyle);
+    sheet.getRange(`A9:AB${maxRows}`).setBorder(true, true, true, true, true, true, '#000000', borderStyle);
+    sheet.getRange('F1:J5').setHorizontalAlignment('center').setVerticalAlignment('middle');
+    sheet.getRangeList(['J4', 'G3:G4']).setNumberFormat('[$Rp-421] #,##0');
+    const dataStart = sheet.getRange('B9');
+    const dataRegion = dataStart.getDataRegion(SpreadsheetApp.Dimension.ROWS);
+    dataRegion.setBorder(true, true, true, true, true, true, '#000000', SpreadsheetApp.BorderStyle.SOLID);
+    // --- Ganti named range ---
+    const cleanNamerange = sheet.getName().replace(/[0-9().\-]/g, '').replace(/\s/g, '');
+    sheet.getParent().setNamedRange(cleanNamerange, sheet.getRange(`J10:J${maxRows}`));
+    // --- Ganti nama sheet ---
+    const rawName = sheet.getName();
+    const cleanNamesheet = rawName.replace(/[0-9.]/g, '');
+    const sheetIndex = sheet.getIndex() - 3;
+    sheet.setName(`${sheetIndex}.${cleanNamesheet}`);
+    Logger.log('Selesai TampilanSheetPenerbit() pada: ' + nama);
+    // === [8] PASANG ULANG Freeze ===
+    sheet.setFrozenColumns(10);
+    sheet.setFrozenRows(9);
+    // === [9] PASANG FILTER ===
+    const dataRange = sheet.getRange(`A9:AB${maxRows}`);
+    if (!dataRange.getFilter()) {
+      dataRange.createFilter();
+      Logger.log(`🔍 Filter ditambahkan pada data: A9:AB${maxRows}`);
+    }
+  };
+//========     Fungsi Mengatur Tampilan PerSheet Penerbit    ========
+
+//========     Fungsi Mengatur Tampilan PerSheet Penerbit    semua Sheet     ========
+ function TampilanSheetPenerbitALLSHEET() {
+    const spreadsheet = SpreadsheetApp.getActive();
+    const semuaSheet = spreadsheet.getSheets();
+    const sheetmulai = 1; // Masukan Nomor Sheet awal
+    const mulai = sheetmulai + 2;
+    const sheetDikecualikan = ["Form Pengadaan", "Hasil Seleksi", "Referensi", "DaftarISBN", "DaftarUUID"];
+
+    if (mulai < 0 || mulai >= semuaSheet.length) {
+      Logger.log("Nomor sheet tidak valid.");
+      return;
+    }
+    semuaSheet.slice(mulai).forEach(sheet => {
+    const namaSheet = sheet.getName();
+    if (sheetDikecualikan.includes(namaSheet)) return;
+      spreadsheet.setActiveSheet(sheet);
+
+      TampilanSheetPenerbit();
+    });
+ };
+//========     Fungsi Mengatur Tampilan PerSheet Penerbit    semua Sheet     ========
