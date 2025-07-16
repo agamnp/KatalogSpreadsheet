@@ -1,0 +1,64 @@
+//========     Fungsi Hapus pembelian Sebelumnya berdasarkan ISBN dan EISBN     ========
+  function HapusSudahdibeliISBNdanEISBN() {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetData = ss.getActiveSheet();
+    const sheetISBN = ss.getSheetByName("DaftarISBN");
+    var nama = ss.getSheetName();
+    Logger.log('🔍 Memproses sheet: ' + nama);
+    if (!sheetData || !sheetISBN) {
+      throw new Error("Sheet aktif atau 'DaftarISBN' tidak ditemukan.");
+    }
+    const startRow = 9;
+    const numRows = sheetData.getLastRow() - startRow + 1;
+    if (numRows <= 1) return;
+    const dataRange = sheetData.getRange(startRow, 1, numRows, sheetData.getLastColumn());
+    const data = dataRange.getValues();
+    // Ambil ISBN referensi dari kolom A dan B, bersihkan selain angka
+    const rawISBNData = sheetISBN.getRange("A:B").getValues();
+    const isbnSet = new Set();
+    rawISBNData.forEach(([isbnCetak, isbnElektronik]) => {
+      const clean1 = String(isbnCetak).replace(/\D/g, "");
+      const clean2 = String(isbnElektronik).replace(/\D/g, "");
+      if (clean1) isbnSet.add(clean1);
+      if (clean2) isbnSet.add(clean2);
+    });
+    const headers = data[0].map(h => String(h).toLowerCase().trim());
+    const isbnCetakIndex = headers.findIndex(h => h === "isbn cetak");
+    const isbnElektronikIndex = headers.findIndex(h => h === "isbn elektronik*");
+    if (isbnCetakIndex === -1 && isbnElektronikIndex === -1) {
+      throw new Error("Kolom 'ISBN Cetak' dan 'ISBN Elektronik*' tidak ditemukan di baris ke-9.");
+    }
+    // Loop dari bawah ke atas agar indeks tidak bergeser saat deleteRow
+    for (let i = data.length - 1; i >= 1; i--) {
+      const valCetak = isbnCetakIndex !== -1 ? String(data[i][isbnCetakIndex]).replace(/\D/g, "") : "";
+      const valElektronik = isbnElektronikIndex !== -1 ? String(data[i][isbnElektronikIndex]).replace(/\D/g, "") : "";
+      if (isbnSet.has(valCetak) || isbnSet.has(valElektronik)) {
+        sheetData.deleteRow(startRow + i);
+      }
+    } Logger.log('🔍 Selesai Memproses sheet: ' + nama);
+    TampilanSheetPenerbit();
+  }
+//========     Fungsi Hapus pembelian Sebelumnya berdasarkan ISBN dan EISBN     ========
+
+//========     Fungsi Hapus pembelian Sebelumnya berdasarkan ISBN dan EISBN Semua Sheet     ========
+  function HapusSudahdibeliISBNdanEISBNALLSHEET() {
+    const spreadsheet = SpreadsheetApp.getActive();
+    const semuaSheet = spreadsheet.getSheets();
+    //PERLU DIRUBAH
+    const sheetmulai = 1; // Masukan Nomor Sheet awal
+    //PERLU DIRUBAH
+    const mulai = sheetmulai + 2;
+    const sheetDikecualikan = ["Form Pengadaan", "Hasil Seleksi", "Referensi", "DaftarISBN", "DaftarUUID"];
+
+    if (mulai < 0 || mulai >= semuaSheet.length) {
+      Logger.log("Nomor sheet tidak valid.");
+      return;
+    }
+    semuaSheet.slice(mulai).forEach(sheet => {
+    const namaSheet = sheet.getName();
+    if (sheetDikecualikan.includes(namaSheet)) return;
+      spreadsheet.setActiveSheet(sheet);
+    HapusSudahdibeliISBNdanEISBN();
+    });
+ };
+//========     Fungsi Hapus pembelian Sebelumnya berdasarkan ISBN dan EISBN Semua Sheet     ========
