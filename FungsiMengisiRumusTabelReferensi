@@ -1,0 +1,145 @@
+//========     Fungsi Mengisi Rumus Tabel referensi     ========
+  //Fungsi ini mengisi rumus pada sheet Referensi
+  function IsiSheetReferensi() {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetUtama = ss.getActiveSheet();
+    const namaSheetAktif = sheetUtama.getName();
+    // Cek apakah sheet aktif adalah "Referensi"
+    if (namaSheetAktif !== 'Referensi') {
+      Logger.log('Fungsi ini hanya dapat dijalankan di sheet "Referensi".');
+      SpreadsheetApp.getUi().alert('Fungsi ini hanya dapat dijalankan di sheet "Referensi".');
+      return;
+    }
+    modulIsidaftarPenerbit();
+    modulisidatareferensi();
+    moduljumlahreferensi();
+  }
+  //modul untuk mengisi list penerbit di baris 4
+  function modulIsidaftarPenerbit() {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetUtama = ss.getSheetByName("Hasil Seleksi");
+    const sheetReferensi = ss.getSheetByName("REFERENSI");
+    const colNomor = 1;     // Kolom A = nomor urut
+    const colPenerbit = 2;  // Kolom B = nama penerbit
+    const startColReferensi = 5; // Kolom E = kolom ke-5
+    const rowReferensi = 4;      // Baris 4 di sheet REFERENSI
+    const semuaSheet = ss.getSheets();
+    
+    //PERLU DIRUBAH
+    // Gabungan baris 20–28 dan 36–119
+    const bnykpen=9;//Array(9) adalah jumlah baris dari data yang akan diisi
+    const bpa=20;// map(i => i + 20) adalah baris awal nya adalah baris 20
+    const bnykpen2=84;//Array(85) adalah jumlah baris dari data yang akan diisi
+    const bpa2=36;// map(i => i + 35) adalah baris awal nya adalah baris 20
+    //PERLU DIRUBAH
+
+    const barisTarget = [...Array(bpa).keys()].map(i => i + bnykpen).concat([...Array(bnykpen2).keys()].map(i => i + bpa2));
+    let col = startColReferensi;
+    barisTarget.forEach(row => {
+      const nomorUrut = sheetUtama.getRange(row, colNomor).getValue();
+      const penerbit = sheetUtama.getRange(row, colPenerbit).getValue();
+      if (!penerbit || !nomorUrut) return;
+      // Cari sheet yang mengandung nama penerbit
+      const sheetCocok = semuaSheet.find(sheet =>
+        sheet.getName().toLowerCase().includes(penerbit.toString().toLowerCase())
+      );
+      if (sheetCocok) {
+        const gid = sheetCocok.getSheetId();
+        const label = `${nomorUrut}`;
+        const formula = `=HYPERLINK("#gid=${gid}"; "${label}")`;
+        sheetReferensi.getRange(rowReferensi, col).setFormula(formula);
+        col++;
+      }
+    });
+  }
+
+  //Modul untuk mengisi data referensi
+  function modulisidatareferensi() {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetRef = ss.getSheetByName("REFERENSI");
+    const barisTarget = [6, 11, 12, 13,
+      19, 20, 21, 22, 23, 24,
+      29, 30, 31, 32, 33, 34, 35, 36,
+      42, 43, 44, 45, 46, 47, 48,
+      53, 54,
+      58, 59,
+      64, 65, 66,
+      71, 72, 73, 74, 75, 76, 77,
+      81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109,
+      113, 114, 115, 116, 117, 118];
+    const bariskosong = 6; //baris yang masih kosong referensinya
+    const barisHyperlink = 4;
+    const kolomMulai = 5;  // Kolom E
+    const kolomAkhir = 115; // Kolom CV
+    const semuaSheet = ss.getSheets();
+    for (let col = kolomMulai; col <= kolomAkhir; col++) {
+      const formulaHyperlink = sheetRef.getRange(barisHyperlink, col).getFormula();
+      const gidMatch = formulaHyperlink.match(/gid=(\d+)/);
+      if (!gidMatch) continue;
+      const gid = parseInt(gidMatch[1], 10);
+      const sheetTarget = semuaSheet.find(s => s.getSheetId() === gid);
+      if (!sheetTarget) continue;
+      const namaSheet = sheetTarget.getName();
+      const namaRange = namaSheet.replace(/[^A-Za-z]/g, ""); // hanya huruf
+      barisTarget.forEach(row => {
+        let formulaCountif;
+        if (row === 6) {
+          // Baris 6: hitung sel kosong
+          formulaCountif = `=COUNTIF(${namaRange};"") `;
+        } else {
+          // Baris lainnya: hitung berdasarkan nilai dari kolom A di REFERENSI
+          formulaCountif = `=COUNTIF(${namaRange}; $A${row})`;
+        }
+        sheetRef.getRange(row, col).setFormula(formulaCountif);
+      });
+    }
+  }
+
+  //Modul Untuk mengisi jumlah baris kosong dan jumlah referensi
+  function moduljumlahreferensi() {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    var startColumnIndex = 5; // Column E
+    var lastColumn = sheet.getLastColumn();
+    var row4Range = sheet.getRange(4, startColumnIndex, 1, lastColumn - startColumnIndex + 1);
+    var row4Values = row4Range.getValues()[0];
+
+    // Helper function to convert column number to letter (supports columns beyond Z)
+    function columnToLetter(column) {
+      var letter = '';
+      while (column > 0) {
+        var mod = (column - 1) % 26;
+        letter = String.fromCharCode(65 + mod) + letter;
+        column = Math.floor((column - mod) / 26);
+      } return letter;
+    }
+    // Collect columns from E onward where row 4 cell is non-empty
+    var columns = [];
+    for (var i = 0; i < row4Values.length; i++) {
+      if (row4Values[i] !== '' && row4Values[i] !== null) {
+        var colIndex = startColumnIndex + i; // Get actual column index
+        columns.push(colIndex); // Store the index
+      }
+    }
+    var formulas = {
+      5: '=SUM({col}14;{col}25;{col}37;{col}49;{col}55;{col}60;{col}67;{col}78;{col}110;{col}119)',
+      14: '=SUM({col}11:{col}13)',
+      25: '=SUM({col}19:{col}24)',
+      37: '=SUM({col}29:{col}36)',
+      49: '=SUM({col}41:{col}48)',
+      55: '=SUM({col}53:{col}54)',
+      60: '=SUM({col}58:{col}59)',
+      67: '=SUM({col}64:{col}66)',
+      78: '=SUM({col}70:{col}77)',
+      110: '=SUM({col}81:{col}109)',
+      119: '=SUM({col}113:{col}118)'
+    };
+    columns.forEach(function (colIndex) {
+      for (var rowStr in formulas) {
+        var row = parseInt(rowStr, 10);
+        var colLetter = columnToLetter(colIndex);
+        var formula = formulas[row].replace(/{col}/g, colLetter);
+        sheet.getRange(row, colIndex).setFormula(formula);
+      }
+    });
+  }
+//========     Fungsi Mengisi Rumus Tabel referensi     ========
